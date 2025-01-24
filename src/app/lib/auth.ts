@@ -1,22 +1,30 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')
-  const isPublicPath = request.nextUrl.pathname === '/login' || 
-                       request.nextUrl.pathname === '/register'
-
-  if (!token && !isPublicPath) {
-    return NextResponse.redirect(new URL('/login', request.url))
+// Token management
+export const setToken = (token: string) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('token', token)
   }
-
-  if (token && isPublicPath) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  return NextResponse.next()
 }
 
-export const config = {
-  matcher: ['/cart', '/profile', '/login', '/register']
+export const getToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token')
+  }
+  return null
+}
+
+export const removeToken = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('token')
+  }
+}
+
+// Auth headers
+export const getAuthHeaders = () => {
+  const token = getToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+// Auth check
+export const isAuthenticated = () => {
+  return !!getToken()
 }

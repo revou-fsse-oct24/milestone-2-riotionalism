@@ -3,20 +3,38 @@ import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')
-  const isPublicPath = request.nextUrl.pathname === '/login' || 
-                       request.nextUrl.pathname === '/register'
+  const isAuthPage = request.nextUrl.pathname.startsWith('/login') || 
+                    request.nextUrl.pathname.startsWith('/register')
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api')
 
-  if (!token && !isPublicPath) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // Protect API routes
+  if (isApiRoute && !token) {
+    return NextResponse.json(
+      { message: 'Authentication required' },
+      { status: 401 }
+    )
   }
 
-  if (token && isPublicPath) {
-    return NextResponse.redirect(new URL('/', request.url))
+  // Redirect from auth pages if logged in
+  if (isAuthPage && token) {
+    return NextResponse.redirect(new URL('/products', request.url))
+  }
+
+  // Protect private pages
+  if (!isAuthPage && !token) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/cart', '/profile', '/login', '/register']
+  matcher: [
+    '/products/:path*',
+    '/cart/:path*',
+    '/profile/:path*',
+    '/api/:path*',
+    '/login',
+    '/register'
+  ]
 }
